@@ -1,53 +1,45 @@
 import cv2
-import imutils
-import argparse
+import numpy as np
+
 
 cap = cv2.VideoCapture("demovideo1_test.mp4")
+frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 
-ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video", help="path to the video file")
-ap.add_argument("-a", "--min-area", type=int, default=500, help="minimum area size")
-args = vars(ap.parse_args())
-firstFrame = None
-while(True):
-    ret, frame = cap.read()
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+ret, frame1 = cap.read()
+ret, frame2 = cap.read()
+print(frame1.shape)
 
-    frame = imutils.resize(frame, width=500)
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (21, 21), 0)
+area = np.zeros((frame_height, frame_width), np.float32)
 
-    if firstFrame is None:
-        firstFrame = gray
-        continue
+while cap.isOpened():
+    diff = cv2.absdiff(frame1, frame2)
+    gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blur, 20, 255, cv2.THRESH_BINARY)
+    dilated = cv2.dilate(thresh, None, iterations=3)
+    contours, _ = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    # compute the absolute difference between the current frame and
-    # first frame
-    frameDelta = cv2.absdiff(firstFrame, gray)
-    thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
-    # dilate the thresholded image to fill in holes, then find contours
-    # on thresholded image
-    thresh = cv2.dilate(thresh, None, iterations=2)
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-        cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    # loop over the contours
-    for c in cnts:
-        # if the contour is too small, ignore it
-        if cv2.contourArea(c) < args["min_area"]:
+    for contour in contours:
+        (x, y, w, h) = cv2.boundingRect(contour)
+
+        if cv2.contourArea(contour) < 2000:
             continue
-        # compute the bounding box for the contour, draw it on the frame,
-        # and update the text
-        (x, y, w, h) = cv2.boundingRect(c)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(frame1, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        for y in range(y, min(y + h, frame_height)):
+            for x in range(x,min(x + w, frame_width)):
+                area[y, x] = 1           
 
-    if (ret == True ):
-        cv2.imshow("Security Feed", frame)
-        cv2.imshow("Thresh", thresh)
-        cv2.imshow("Frame Delta", frameDelta)
+    cv2.rectangle(area, (50, 50), (250, 200), (0, 0, 255), 2)
+    cv2.rectangle(frame1, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    image = cv2.resize(frame1, (1280, 720))
+    cv2.imshow("feed", frame1)
+    frame1 = frame2
+    ret, frame2 = cap.read()
 
-    if cv2.waitKey(25) & 0xFF == ord('q'):
+    if cv2.waitKey(25) & 0xFF == ord("q"):
         break
 
-cap.release()
 cv2.destroyAllWindows()
+cap.release()
