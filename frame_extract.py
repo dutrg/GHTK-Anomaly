@@ -6,7 +6,7 @@ fps = vid.get(cv2.CAP_PROP_FPS)
 
 print(fps)
 
-vid.set(cv2.CAP_PROP_POS_FRAMES, 155)
+vid.set(cv2.CAP_PROP_POS_FRAMES, 153)
 
 ret, frame = vid.read()
 
