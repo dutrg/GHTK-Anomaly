@@ -27,11 +27,11 @@ while cap.isOpened():
         if cv2.contourArea(contour) < 2000:
             continue
         cv2.rectangle(frame1, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        for y in range(y, min(y + h, frame_height)):
-            for x in range(x,min(x + w, frame_width)):
-                area[y, x] = 1           
+        # for y in range(y, min(y + h, frame_height)):
+        #     for x in range(x,min(x + w, frame_width)):
+        #         area[y, x] = 1           
 
-    cv2.rectangle(area, (50, 50), (250, 200), (0, 0, 255), 2)
+    # cv2.rectangle(area, (50, 50), (250, 200), (0, 0, 255), 2)
     cv2.rectangle(frame1, (x, y), (x + w, y + h), (0, 255, 0), 2)
     image = cv2.resize(frame1, (1280, 720))
     cv2.imshow("feed", frame1)
